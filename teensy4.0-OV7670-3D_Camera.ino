@@ -24,9 +24,9 @@ void setup() {
   // Ignore NACK (camera uses SCCB)
   IMXRT_LPI2C1.MCFGR1 |= LPI2C_MCFGR1_IGNACK;
 
-  // Start XCLK signal
-  analogWriteFrequency(5, 16000000);
-  analogWrite(5, 128);
+  // Start MCLK
+  analogWriteFrequency(MCLK, 16000000);
+  analogWrite(MCLK, 128);
 
   Wire.begin();
   Serial.begin(9600);
