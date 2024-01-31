@@ -12,8 +12,12 @@
 #define REG_VER 0x0b  // Product ID LSB
 #define COM7 0x12
 #define COM15 0x40
+#define COM6 0x0F
+#define COM10 0x15
 #define SCALING_XSC 0x70
 #define SCALING_YSC 0x71
+#define MVFP 0x1E
+#define CLKRC 0x11
 
 /***** Globals *****/
 const uint8_t DATA_PINS[8] = { 10, 12, 11, 13, 6, 9, 8, 7 };  // port 2 pins, arranged for GPIO to be as continuous as possible
@@ -39,11 +43,12 @@ void setup() {
   analogWrite(MCLK, 128);
 
   Wire.begin();
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("########################################");
 
   test_i2c_read();
   setFormat();
+  // setTestPattern();
 
   // set data pins as inputs
   for (int pin : DATA_PINS) {
@@ -79,18 +84,18 @@ void loop() {
   }
   interrupts();
 
-
-  for (int i = 0; i < height * width * bytesPerPixel; i++) {
-    uint8_t p = buffer[i];
-    if (p < 0x10) {
-      // pad to two digits
-      Serial.print('0');
+  if (digitalReadFast(23) == HIGH) {
+    for (int i = 0; i < height * width * bytesPerPixel; i++) {
+      uint8_t p = buffer[i];
+      if (p < 0x10) {
+        // pad to two digits
+        Serial.print('0');
+      }
+      Serial.print(p, HEX);
     }
-    Serial.print(p, HEX);
+    Serial.println();
   }
-  Serial.println();
-
-  delay(1000);
+  
 }
 
 uint8_t readDataport() {
@@ -127,6 +132,18 @@ bool test_i2c_read() {
   }
 
   Serial.println("test_read passed");
+
+  // reset
+  Wire.beginTransmission(OV7670_I2C_ADDR);
+  Wire.write(COM7);
+  Wire.write(0x80);
+  ret = Wire.endTransmission();
+  if (ret != 0) {
+    Serial.printf("ERROR: COM7 write failed, error %d\n", ret);
+    return false;
+  }
+  delay(1);
+
   return true;
 }
 
@@ -151,6 +168,27 @@ bool setFormat() {
     Serial.printf("ERROR: COM15 write failed, error %d\n", ret);
     return false;
   }
+
+  // Mirror, VFlip
+  Wire.beginTransmission(OV7670_I2C_ADDR);
+  Wire.write(MVFP);
+  Wire.write(0x00 | 0b00110000);
+  ret = Wire.endTransmission();
+  if (ret != 0) {
+    Serial.printf("ERROR: MVFP write failed, error %d\n", ret);
+    return false;
+  }
+
+  // Clock Prescale
+  Wire.beginTransmission(OV7670_I2C_ADDR);
+  Wire.write(CLKRC);
+  Wire.write(0x80 | 0b00111111);
+  ret = Wire.endTransmission();
+  if (ret != 0) {
+    Serial.printf("ERROR: CLKRC write failed, error %d\n", ret);
+    return false;
+  }
+
   return true;
 }
 

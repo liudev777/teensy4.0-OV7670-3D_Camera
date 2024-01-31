@@ -9,9 +9,15 @@ data = bytes.fromhex(data)
 with open("output/img.raw", "wb") as file:
     file.write(data)
 
+buffer = np.frombuffer(data, dtype=np.uint8).reshape(240, 320, 2).copy()
+
 # Convert to 3 channel uint8 numpy array representing the BGR image
 img = cv2.cvtColor(
-    np.frombuffer(data, dtype=np.uint8).reshape(240, 320, 2), cv2.COLOR_BGR5652RGB
+    buffer, cv2.COLOR_BGR5652BGR
 )
 
-cv2.imwrite("output/image.png", img)
+
+cv2.imwrite("output/image0.png", img)
+
+# test - YBGR
+# E0FF1F00E00700F8
