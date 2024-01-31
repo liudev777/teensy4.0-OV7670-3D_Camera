@@ -111,20 +111,27 @@ void configureCamera() {
   }
   
   delay(1000);
-  
+
   // Set to RGB output mode
-  if (!writeToRegister(COM7, 0b00010100)) {
+  if (!writeToRegister(COM7, 0b00010000)) {
     return;
   }
 
-  // Set to RGB565
+  // // Set to RGB565
+  // uint8_t com15byte = readFromRegister(COM15);
+  // if (!writeToRegister(COM15, (com15byte | 0b00010000))) {
+  //   return;
+  // }
+
+  // set to yuv
   uint8_t com15byte = readFromRegister(COM15);
-  if (!writeToRegister(COM15, (com15byte | 0b00010000))) {
+  if (!writeToRegister(COM15, (com15byte | 0b00000000))) {
     return;
   }
 
-  // flip vertical image
-  if (!writeToRegister(MVFP, (0b00010000))) {
+
+  // flip vertical and horizontal image
+  if (!writeToRegister(MVFP, (0b00110000))) {
     return;
   }
 
