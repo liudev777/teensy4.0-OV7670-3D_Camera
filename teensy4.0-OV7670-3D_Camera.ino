@@ -14,6 +14,9 @@
 #define COM7 0x12 // Common control 7 output format option
 #define COM15 0x40 // Common control 15 RGB 555/565 option
 #define MVFP 0x1E // Scan direction control
+#define SCALING_XSC 0x70
+#define SCALING_YSC 0x71
+#define CLKRC 0x11
 
 /***** Globals *****/
 const uint8_t DATA_PINS[8] = { 10, 12, 11, 13, 6, 9, 8, 7 };  // port 2 pins, arranged for GPIO to be as continuous as possible
@@ -47,6 +50,7 @@ void setup() {
 
   test_i2c_read();
   configureCamera();
+  // setTestPattern();
 
   // set data pins as inputs
   for (int pin : DATA_PINS) {
@@ -62,7 +66,7 @@ void loop() {
   getPicture();
   printPicture();
   Serial.println("********************************************\n********************************************");
-  delay(1000);
+  delay(500);
 }
 
 void printPicture() {
@@ -129,9 +133,14 @@ void configureCamera() {
     return;
   }
 
-
   // flip vertical and horizontal image
   if (!writeToRegister(MVFP, (0b00110000))) {
+    return;
+  }
+
+  // decrease pclk
+  uint8_t clkrc_byte = readFromRegister(CLKRC);
+  if (!writeToRegister(CLKRC, (clkrc_byte | 0b00011111))) {
     return;
   }
 
@@ -213,32 +222,25 @@ bool test_i2c_read() {
   return true;
 }
 
-// uint8_t read_register(uint8_t reg, uint8_t* buffer) {
-//   uint8_t ret;
+bool setTestPattern() {
+  uint8_t ret;
+  // set test patterns
+  Wire.beginTransmission(OV7670_I2C_ADDR);
+  Wire.write(SCALING_XSC);
+  Wire.write(0x3A | 0b10000000);
+  ret = Wire.endTransmission();
+  if (ret != 0) {
+    Serial.printf("ERROR: Set test_pattern write failed, error %d\n", ret);
+    return false;
+  }
 
-//   Wire.beginTransmission(OV7670_I2C_ADDR);
-//   Wire.write(reg);
-//   ret = Wire.endTransmission();
-//   if (ret != 0) {
-//     Serial.printf("ERROR: read_register write failed, error %d", ret);
-//     return ret;
-//   }
-
-//   Wire.requestFrom(OV7670_I2C_ADDR, 1);
-//   *buffer = Wire.read();
-//   return 0;
-// }
-
-// uint8_t write_register(uint8_t reg, uint8_t val) {
-//   uint8_t ret;
-
-//   Wire.beginTransmission(OV7670_I2C_ADDR);
-//   Wire.write(reg);
-//   Wire.write(val);
-//   ret = Wire.endTransmission();
-//   if (ret != 0) {
-//     Serial.printf("ERROR: write_register write failed, error %d", ret);
-//     return ret;
-//   }
-//   return 0;
-// }
+  Wire.beginTransmission(OV7670_I2C_ADDR);
+  Wire.write(SCALING_YSC);
+  Wire.write(0x35 | 0b10000000);
+  ret = Wire.endTransmission();
+  if (ret != 0) {
+    Serial.printf("ERROR: Set test_pattern write failed, error %d\n", ret);
+    return false;
+  }
+  return true;
+}
