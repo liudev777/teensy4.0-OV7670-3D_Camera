@@ -11,11 +11,13 @@
 /* Registers */
 #define REG_PID 0x0a  // Product ID MSB
 #define REG_VER 0x0b  // Product ID LSB
+
 #define COM7 0x12 // Common control 7 output format option
 #define COM15 0x40 // Common control 15 RGB 555/565 option
 #define MVFP 0x1E // Scan direction control
 #define SCALING_XSC 0x70
 #define SCALING_YSC 0x71
+
 #define CLKRC 0x11
 
 /***** Globals *****/
@@ -34,6 +36,7 @@ const int bytesPerPixel = 2;
 uint8_t buffer[width * height * bytesPerPixel];
 
 
+
 /***** Functions *****/
 
 void setup() {
@@ -45,11 +48,13 @@ void setup() {
   analogWrite(MCLK, 128);
 
   Wire.begin();
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("########################################");
 
   test_i2c_read();
+
   configureCamera();
+
   // setTestPattern();
 
   // set data pins as inputs
@@ -57,6 +62,7 @@ void setup() {
     pinMode(pin, INPUT);
   }
   pinMode(HS, INPUT);
+
   pinMode(VS, INPUT);
   pinMode(PCLK, INPUT);
 }
@@ -102,10 +108,12 @@ void getPicture() {
       byte_count++;
 
       while (digitalReadFast(PCLK) == HIGH); // wait until clock ticks to LOW to continue 
+
     }
     while (digitalReadFast(HS) == HIGH);
   }
   interrupts();
+
 }
 
 void configureCamera() {
@@ -197,6 +205,7 @@ uint8_t readDataPort() {
   r45 = ((read >> 10) & 0b11) << 4;
   r67 = ((read >> 16) & 0b11) << 6;
   return (r0123 | r45 | r67);
+
 }
 
 bool test_i2c_read() {
@@ -219,6 +228,18 @@ bool test_i2c_read() {
   }
 
   Serial.println("test_read passed");
+
+  // reset
+  Wire.beginTransmission(OV7670_I2C_ADDR);
+  Wire.write(COM7);
+  Wire.write(0x80);
+  ret = Wire.endTransmission();
+  if (ret != 0) {
+    Serial.printf("ERROR: COM7 write failed, error %d\n", ret);
+    return false;
+  }
+  delay(1);
+
   return true;
 }
 
@@ -243,4 +264,4 @@ bool setTestPattern() {
     return false;
   }
   return true;
-}
+
