@@ -76,16 +76,8 @@ void loop() {
 }
 
 void printPicture() {
-  for (int b = 0; b < height * width * bytesPerPixel; b++) {
-    uint8_t pixel = buffer[b];
-    if (pixel < 0x10) {
-      Serial.print('0'); // ex: pads B C A to 0B 0C 0A
-    }
-    Serial.print(pixel, HEX);
-  }
-  Serial.println();
-
-  delay(500);
+  Serial.write("FRAME", 5);
+  Serial.write(buffer, width * height * bytesPerPixel);
 }
 
 void getPicture() {
