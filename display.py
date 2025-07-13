@@ -1,8 +1,13 @@
 import numpy as np
 import cv2
 import serial
+import os
+from dotenv import load_dotenv
 
-ser = serial.Serial("COM6", 115200)
+load_dotenv()
+
+SERIAL_NUM=os.getenv("SERIAL_NUM")
+ser = serial.Serial(SERIAL_NUM, 115200)
 
 while (True):
     data = ser.read_until(b"FRAME")
