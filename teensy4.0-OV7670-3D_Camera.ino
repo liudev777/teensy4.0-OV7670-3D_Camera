@@ -9,26 +9,26 @@
 // data port are not in sequential order (see DATA_PINS config below). After receiving the data, the bits must be reordered.
 
 /* Registers */
-#define REG_PID 0x0a  // Product ID MSB
-#define REG_VER 0x0b  // Product ID LSB
+#define REG_PID 0x0a        // Product ID MSB
+#define REG_VER 0x0b        // Product ID LSB
 
-#define COM7 0x12 // Common control 7 output format option
-#define COM13 0x3D // Common control 13 Gamme, UV saturation, UV swap
-#define COM15 0x40 // Common control 15 RGB 555/565 option
-#define MVFP 0x1E // Scan direction control
+#define COM7 0x12           // Common control 7 output format option
+#define COM13 0x3D          // Common control 13 Gamme, UV saturation, UV swap
+#define COM15 0x40          // Common control 15 RGB 555/565 option
+#define MVFP 0x1E           // Scan direction control
 #define SCALING_XSC 0x70
 #define SCALING_YSC 0x71
 
 #define CLKRC 0x11
 
 /***** Globals *****/
-const uint8_t DATA_PINS[8] = { 10, 12, 11, 13, 6, 9, 8, 7 };  // port 2 pins, arranged for GPIO to be as continuous as possible
+const uint8_t DATA_PINS[8] = { 10, 12, 11, 13, 6, 9, 8, 7 };  // port 2 pins, arranged for GPIO to be as continuous as possible. Corresponds to D0, D1, D2, ..., D7 on the camera
 const uint8_t MCLK = 5;
 
 /* Horizontal sync, vertical sync, pixel clock pins*/
-const uint8_t HS = 4;
-const uint8_t PCLK = 3;
-const uint8_t VS = 2;
+const uint8_t HS = 4;         // valid pixel row
+const uint8_t PCLK = 3;       // pixel clock (each HIGH edge = new data available).
+const uint8_t VS = 2;         // frame start
 
 /* Dimensions */
 const int width = 320;
@@ -36,6 +36,9 @@ const int height = 240;
 const int bytesPerPixel = 2;
 uint8_t buffer[width * height * bytesPerPixel];
 
+/* makeshift shutter button */
+const int SHUTTER = 23;               // arbituary pin we designated to shutter
+uint8_t prev_shutter_state = HIGH;    // used to determine if shutter closed
 
 
 /***** Functions *****/
@@ -45,11 +48,11 @@ void setup() {
   IMXRT_LPI2C1.MCFGR1 |= LPI2C_MCFGR1_IGNACK;
 
   // Start MCLK
-  analogWriteFrequency(MCLK, 16000000);
-  analogWrite(MCLK, 128);
+  analogWriteFrequency(MCLK, 16000000);      // PWN output to 16MHz
+  analogWrite(MCLK, 128);                    // Duty cycle at 50%. Teensy range is 0 - 255, 128/255 = 50%. This means equal amount high and low signal duration per pulse.          
 
   Wire.begin();
-  Serial.begin(6000000);
+  Serial.begin(6000000);                     // 6mb per second. Fastest stable baud for teensy4.0
 
   // set data pins as inputs
   for (int pin : DATA_PINS) {
@@ -65,18 +68,23 @@ void setup() {
 }
 
 void loop() {
-  if (digitalReadFast(23) == HIGH) {
+  int shutter_state = digitalReadFast(SHUTTER);
+
+  if (shutter_state == LOW && prev_shutter_state == HIGH) {
+    prev_shutter_state = LOW;
     getPicture();
-    printPicture();
+    printPicture(/*save_flag=*/true);
+  } else if (shutter_state == HIGH) {
+    prev_shutter_state = HIGH;
+    getPicture();
+    printPicture(/*save_flag=*/false);
   }
-  
-  // Serial.println("********************************************\n********************************************");
-  // delay(500);
 }
 
-void printPicture() {
-  Serial.write("FRAME", 5);
-  Serial.write(buffer, width * height * bytesPerPixel);
+void printPicture(bool save_flag) {
+  Serial.write("FRAME", 5);                                     // ascii header (marks start of image so python code knows where to start new frame)
+  Serial.write(save_flag ? 1 : 0);                              // 1 byte: save = 1, otherwise 0. To trigger screenshot in python code.
+  Serial.write(buffer, width * height * bytesPerPixel);         // write content of buffer to serial (the image)
 }
 
 void getPicture() {
