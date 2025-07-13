@@ -101,7 +101,6 @@ void getPicture() {
       while (digitalReadFast(PCLK) == HIGH); // wait until clock ticks to LOW to continue 
 
     }
-    while (digitalReadFast(HS) == HIGH);
   }
   interrupts();
 
@@ -117,7 +116,7 @@ void configureCamera() {
 
   // decrease pclk
   uint8_t clkrc_byte = readFromRegister(CLKRC);
-  if (!writeToRegister(CLKRC, (clkrc_byte | 0b00000000))) {
+  if (!writeToRegister(CLKRC, (clkrc_byte | 0b00000001))) {
     return;
   }
 
