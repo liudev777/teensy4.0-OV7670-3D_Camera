@@ -48,7 +48,7 @@ void setup() {
   analogWrite(MCLK, 128);
 
   Wire.begin();
-  Serial.begin(115200);
+  Serial.begin(6000000);
   Serial.println("########################################");
 
   test_i2c_read();
@@ -68,11 +68,13 @@ void setup() {
 }
 
 void loop() {
+  if (digitalReadFast(23) == HIGH) {
+    getPicture();
+    printPicture();
+  }
   
-  getPicture();
-  printPicture();
   // Serial.println("********************************************\n********************************************");
-  delay(500);
+  // delay(500);
 }
 
 void printPicture() {
@@ -116,6 +118,12 @@ void configureCamera() {
   
   delay(1000);
 
+  // decrease pclk
+  uint8_t clkrc_byte = readFromRegister(CLKRC);
+  if (!writeToRegister(CLKRC, (clkrc_byte | 0b00000000))) {
+    return;
+  }
+
   // Set to RGB output mode
   if (!writeToRegister(COM7, 0b00010000)) {
     return;
@@ -137,13 +145,6 @@ void configureCamera() {
   if (!writeToRegister(MVFP, (0b00110000))) {
     return;
   }
-
-  // decrease pclk
-  uint8_t clkrc_byte = readFromRegister(CLKRC);
-  if (!writeToRegister(CLKRC, (clkrc_byte | 0b00011111))) {
-    return;
-  }
-
 }
 
 uint8_t readFromRegister(int reg) {

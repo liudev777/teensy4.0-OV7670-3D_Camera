@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SERIAL_NUM=os.getenv("SERIAL_NUM")
-ser = serial.Serial(SERIAL_NUM, 115200)
+ser = serial.Serial(SERIAL_NUM, 6000000)
 
 while (True):
     data = ser.read_until(b"FRAME")
