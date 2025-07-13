@@ -68,11 +68,13 @@ void setup() {
 }
 
 void loop() {
+  if (digitalReadFast(23) == HIGH) {
+    getPicture();
+    printPicture();
+  }
   
-  getPicture();
-  printPicture();
   // Serial.println("********************************************\n********************************************");
-  delay(500);
+  // delay(500);
 }
 
 void printPicture() {
