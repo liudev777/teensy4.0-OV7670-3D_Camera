@@ -21,7 +21,7 @@
 #define CLKRC 0x11
 
 /***** Globals *****/
-const uint8_t DATA_PINS[8] = { 10, 12, 11, 13, 6, 9, 8, 7 };  // port 2 pins, arranged for GPIO to be as continuous as possible
+const uint8_t DATA_PINS[8] = { 10, 12, 11, 13, 6, 9, 8, 7 };  // port 2 pins, arranged for GPIO to be as continuous as possible. Corresponds to D0, D1, D2, ..., D7 on the camera
 const uint8_t MCLK = 5;
 
 /* Horizontal sync, vertical sync, pixel clock pins*/
